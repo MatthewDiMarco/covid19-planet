@@ -1,0 +1,36 @@
+body {
+    overflow: hidden;
+    margin: 0px;
+    padding: 0px;
+}
+
+canvas {
+    display: block;
+}
+
+div {
+    margin: auto; 
+}
+
+#stats {
+    position: fixed;
+    text-align: center;
+    height: 5%;
+    width: 100%;
+    font-size: 32px;
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    flex-direction: row;
+}
+
+#infected {
+    color: rgb(225, 225, 255);
+}
+
+#deceased {
+    color: rgb(255, 225, 225);
+}
+
+#recovered {
+    color: rgb(225, 255, 225);
+}
