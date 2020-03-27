@@ -1,5 +1,5 @@
 /**
- * An interactive 3d planetary visualization of covid-19 global data across 2020.
+ * Interactive 3d planetary visualization of global covid-19 data across 2020.
  * @author Matthew Di Marco and ...
  */
 
@@ -15,20 +15,19 @@ var scene,
 const cGrey = "#151515",
       cRed = "#FE2E2E",
       aspect = window.innerWidth/window.innerHeight,
-      earthRadius = 1,
-      earthDetail = 24,
-      earthTexturePath = 'assets/textures/earth-texture.jpg';
+      detailFactor = 5;
 
 /**
- * Class for representing the planet
+ * Represent the planet and it's regions.
  */
 class Planet
 {
     constructor(radius, texturePath)
     {
+        const detail = 12 * detailFactor;
         var geometryPlanet, materialPlanet, texturePlanet;
 
-        geometryPlanet = new THREE.SphereGeometry(radius, earthDetail, earthDetail);
+        geometryPlanet = new THREE.SphereGeometry(radius, detail, detail);
         texturePlanet = new THREE.TextureLoader().load(texturePath);
         materialPlanet = new THREE.MeshBasicMaterial({map: texturePlanet});
 
@@ -68,7 +67,7 @@ class Planet
 }
 
 /**
- * Class for representing a region on a planet.
+ * Represents a region.
  */
 class Region 
 {
@@ -78,9 +77,10 @@ class Region
         this.deceased = 0;
         this.recovered = 0;
 
+        const detail = 4 * detailFactor;
         this.dome = new THREE.Mesh(
-            new THREE.SphereGeometry(0.01, 8, 8),
-            new THREE.MeshBasicMaterial({color: cRed})
+            new THREE.SphereGeometry(0.001, detail, detail),
+            new THREE.MeshBasicMaterial({color: cRed, opacity: .50, transparent: true})
         );
     }
 
@@ -90,17 +90,21 @@ class Region
      * @param newDeceased 
      * @param numRecovered 
      */
-    updateStats(newInfected, newDeceased, numRecovered)
+    setStats(newInfected, newDeceased, numRecovered)
     {
         this.infected = newInfected;
         this.deceased = newDeceased;
         this.revocered = numRecovered;
 
         //scale the mesh
-        const scale = (this.normalise(newInfected, 0, 5));
-        this.dome.scale.set(scale, 
-                            scale, 
-                            scale);
+        var lower = 0, upper = 0, scale = 1;
+        if(newInfected > 10000)     { lower = 65; upper = 75; }
+        else if(newInfected > 1000) { lower = 50; upper = 65; }
+        else if(newInfected > 100)  { lower = 25; upper = 50; }
+        else if(newInfected > 1)    { lower = 1; upper = 25; }
+        
+        scale += this.normalise(newInfected, lower, upper);
+        this.dome.scale.set(scale, scale, scale);
     }
 
     /**
@@ -149,13 +153,15 @@ function init()
     cam.position.z = 3;
 
     //create the Earth
-    earth = new Planet(earthRadius, earthTexturePath);
+    earth = new Planet(1, 'assets/textures/earth-texture.jpg');
 
-    //controls
+    //user controls
     controls = new THREE.OrbitControls(cam, renderer.domElement);
     controls.target.set( 0, 0, 0 )
     controls.enablePan = false;
+    controls.autoRotate = true;
     controls.enableDamping = true;
+    controls.autoRotateSpeed = 0.5;
     controls.dampingFactor = 0.1;
 
     loadData();
@@ -179,9 +185,9 @@ function shiftTimeline(newTimelineIdx)
     timelineIdx = newTimelineIdx;
     for(ii = 0; ii < earth.regions.length; ii++)
     {
-        earth.regions[ii].updateStats(matrixInfected[ii][timelineIdx],
-                                      matrixDeceased[ii][timelineIdx],
-                                      matrixRecovered[ii][timelineIdx]);
+        earth.regions[ii].setStats(matrixInfected[ii][timelineIdx],
+                                   matrixDeceased[ii][timelineIdx],
+                                   matrixRecovered[ii][timelineIdx]);
     }
 }
 
@@ -191,14 +197,26 @@ function shiftTimeline(newTimelineIdx)
 function draw()
 {
     requestAnimationFrame(draw);
-    document.getElementById('infected').innerHTML = "INFECTED " + arrTotalInfected[timelineIdx];
-    document.getElementById('deceased').innerHTML = "DECEASED " + arrTotalDeceased[timelineIdx];
-    document.getElementById('recovered').innerHTML = "RECOVERED " + arrTotalRecovered[timelineIdx];
+
+    //stats
+    document.getElementById('infected').innerHTML = "Infected " + arrTotalInfected[timelineIdx];
+    document.getElementById('deceased').innerHTML = "Deceased " + arrTotalDeceased[timelineIdx];
+    document.getElementById('recovered').innerHTML = "Recovered " + arrTotalRecovered[timelineIdx];
+
+    //slider
+    slider = document.getElementById('timeline');
+    document.getElementById('date').innerHTML = dates[slider.value];
+    if(slider.value != timelineIdx)
+    {
+        shiftTimeline(slider.value);
+    }
+
+    //everything else
     renderer.render(scene, cam);
     controls.update();
 }
 
 //Start program
 init();
-shiftTimeline(0);
+//var myInt = window.setInterval(function(){shiftTimeline(timelineIdx+1)}, 100);
 draw();

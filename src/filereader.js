@@ -13,6 +13,7 @@ var arrTotalInfected, arrTotalDeceased, arrTotalRecovered;
 
 //arr storing lat/long of regions
 var coords = [];
+var dates;
 
 //Files
 const infected = 'assets/data/time_series_covid19_confirmed_global.csv';
@@ -20,7 +21,7 @@ const deceased = 'assets/data/time_series_covid19_deaths_global.csv';
 const recovered = 'assets/data/time_series_covid19_recovered_global.csv'; 
 
 /** 
- * Populates coords and matricies with data from the above files.
+ * Populates coords and matricies with data from the csv files.
  */
 async function getDataFromFiles()
 {
@@ -37,7 +38,9 @@ async function getDataFromFiles()
     const dataRecovered = await responseRecovered.text();
 
     //split lines and delete headers (no data)
-    var rowsInfected = dataInfected.split('\n').splice(1);
+    var rowsInfected = dataInfected.split('\n');
+    dates = rowsInfected[0].split(',').splice(4);
+    rowsInfected = rowsInfected.splice(1);
     var rowsDeceased = dataDeceased.split('\n').splice(1);
     var rowsRecovered = dataRecovered.split('\n').splice(1);
 

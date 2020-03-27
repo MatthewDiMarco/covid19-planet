@@ -1,10 +1,6 @@
 # covid19-planet
-Interactive 3d planetary visualization of covid-19 global data across 2020.
+Interactive 3d planetary visualization of global covid-19 data across 2020.
 
-# Source
-https://github.com/CSSEGISandData/COVID-19
-
-# TODO
-- Make region spots transparent
-- add 'data last updated' to html
-- Add global recovered stats
+# Data
+Source: https://github.com/CSSEGISandData/COVID-19
+Current directory stores from 01/22/2020to 03/24/2020.
