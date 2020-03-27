@@ -1,6 +1,6 @@
 /**
  * Interactive 3d planetary visualization of global covid-19 data across 2020.
- * @author Matthew Di Marco and ...
+ * @author Matthew Di Marco
  */
 
 //Globals
@@ -8,11 +8,11 @@ var scene,
     cam, 
     renderer, 
     earth, 
-    controls,
+    satellite,
     timelineIdx;
 
 //Constants
-const cGrey = "#151515",
+const cBlack = "#0f0f0f",
       cRed = "#FE2E2E",
       aspect = window.innerWidth/window.innerHeight,
       detailFactor = 5;
@@ -74,48 +74,34 @@ class Region
     constructor(lat, long) 
     {
         this.infected = 0;
-        this.deceased = 0;
-        this.recovered = 0;
 
         const detail = 4 * detailFactor;
         this.dome = new THREE.Mesh(
             new THREE.SphereGeometry(0.001, detail, detail),
-            new THREE.MeshBasicMaterial({color: cRed, opacity: .50, transparent: true})
+            new THREE.MeshBasicMaterial({
+                color: cRed, 
+                opacity: .50, 
+                transparent: true
+            })
         );
     }
 
     /**
-     * Increments the current stat values by numX amount.
+     * Set the number of infected in this region and scale the mesh
      * @param newInfected 
-     * @param newDeceased 
-     * @param numRecovered 
      */
-    setStats(newInfected, newDeceased, numRecovered)
+    setStats(newInfected)
     {
         this.infected = newInfected;
-        this.deceased = newDeceased;
-        this.revocered = numRecovered;
 
         //scale the mesh
-        var lower = 0, upper = 0, scale = 1;
-        if(newInfected > 10000)     { lower = 65; upper = 75; }
-        else if(newInfected > 1000) { lower = 50; upper = 65; }
-        else if(newInfected > 100)  { lower = 25; upper = 50; }
-        else if(newInfected > 1)    { lower = 1; upper = 25; }
-        
-        scale += this.normalise(newInfected, lower, upper);
-        this.dome.scale.set(scale, scale, scale);
-    }
+        var scale = 1;
+        if(newInfected >= 1)
+        {
+            scale += 10 + (2 * (newInfected / 1000));
+        }
 
-    /**
-     * Crunch any real number 'x' into a value between lower and upper.
-     * @param x
-     * @param lower 
-     * @param upper 
-     */
-    normalise(x, lower, upper)
-    {
-        return (upper - lower) / (1 + Math.exp(-x)) + lower;
+        this.dome.scale.set(scale, scale, scale);
     }
 
     /**
@@ -143,7 +129,7 @@ function init()
     scene = new THREE.Scene();
     cam = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
     renderer = new THREE.WebGLRenderer({antialias: true});
-    renderer.setClearColor(cGrey);
+    renderer.setClearColor(cBlack);
     renderer.setSize(window.innerWidth, window.innerHeight);
 
     //add to html doc
@@ -156,13 +142,13 @@ function init()
     earth = new Planet(1, 'assets/textures/earth-texture.jpg');
 
     //user controls
-    controls = new THREE.OrbitControls(cam, renderer.domElement);
-    controls.target.set( 0, 0, 0 )
-    controls.enablePan = false;
-    controls.autoRotate = true;
-    controls.enableDamping = true;
-    controls.autoRotateSpeed = 0.5;
-    controls.dampingFactor = 0.1;
+    satellite = new THREE.OrbitControls(cam, renderer.domElement);
+    satellite.target.set( 0, 0, 0 )
+    satellite.enablePan = false;
+    satellite.autoRotate = true;
+    satellite.enableDamping = true;
+    satellite.autoRotateSpeed = 0.5;
+    satellite.dampingFactor = 0.1;
 
     loadData();
 }
@@ -174,6 +160,12 @@ async function loadData()
 {
     await getDataFromFiles();
     earth.loadRegions();
+
+    //adjust slider
+    var slider = document.getElementById('timeline');
+    slider.min = 0;
+    slider.max = dates.length - 1;
+    slider.value = dates.length - 1;
 }
 
 /**
@@ -185,9 +177,7 @@ function shiftTimeline(newTimelineIdx)
     timelineIdx = newTimelineIdx;
     for(ii = 0; ii < earth.regions.length; ii++)
     {
-        earth.regions[ii].setStats(matrixInfected[ii][timelineIdx],
-                                   matrixDeceased[ii][timelineIdx],
-                                   matrixRecovered[ii][timelineIdx]);
+        earth.regions[ii].setStats(matrixInfected[ii][timelineIdx]);
     }
 }
 
@@ -204,7 +194,7 @@ function draw()
     document.getElementById('recovered').innerHTML = "Recovered " + arrTotalRecovered[timelineIdx];
 
     //slider
-    slider = document.getElementById('timeline');
+    var slider = document.getElementById('timeline');
     document.getElementById('date').innerHTML = dates[slider.value];
     if(slider.value != timelineIdx)
     {
@@ -213,10 +203,8 @@ function draw()
 
     //everything else
     renderer.render(scene, cam);
-    controls.update();
+    satellite.update();
 }
 
-//Start program
 init();
-//var myInt = window.setInterval(function(){shiftTimeline(timelineIdx+1)}, 100);
 draw();

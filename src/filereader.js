@@ -2,13 +2,10 @@
  * Contains functionality responsible for extracting csv covid-19 data.
  */
 
-/**
- * 2d matricies containing covid-19 data.
- * row = region, col = date
- */
-var matrixInfected, matrixDeceased, matrixRecovered;
+//2d matrix containing infected data per region (row = region, col = date)
+var matrixInfected;
 
-//Contains totals for each date in the corresponding matrix.
+//contains totals for each date
 var arrTotalInfected, arrTotalDeceased, arrTotalRecovered;
 
 //arr storing lat/long of regions
@@ -16,12 +13,14 @@ var coords = [];
 var dates;
 
 //Files
+//Retrieved from CSSE JHU
+//https://github.com/CSSEGISandData/COVID-19
 const infected = 'assets/data/time_series_covid19_confirmed_global.csv';
 const deceased = 'assets/data/time_series_covid19_deaths_global.csv';
 const recovered = 'assets/data/time_series_covid19_recovered_global.csv'; 
 
 /** 
- * Populates coords and matricies with data from the csv files.
+ * Populates coords and matrix with data from the csv files.
  */
 async function getDataFromFiles()
 {
@@ -52,20 +51,27 @@ async function getDataFromFiles()
     arrTotalDeceased = new Array(numDates).fill(0);
     arrTotalRecovered = new Array(numDates).fill(0);
 
-    matrixInfected = [], matrixDeceased = [], matrixRecovered = [];
-
     //extract contents
+    matrixInfected = [];
     for(ii = 0; ii < rowsInfected.length; ii++) //cycle rows
     {
-        //new row for the matricies
+        //new row for the matrix
         matrixInfected.push(new Array());
-        matrixDeceased.push(new Array());
-        matrixRecovered.push(new Array());
 
-        //split columns
-        const currRowInfected = rowsInfected[ii].split(',');
-        const currRowDeceased = rowsDeceased[ii].split(',');
-        const currRowRecovered = rowsRecovered[ii].split(',');
+        //split columns (delim=',' but keep commas inside quoted elements)
+        var currRowInfected = rowsInfected[ii].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+
+        var currRowDeceased = [];
+        if(rowsDeceased[ii] != undefined)
+        {
+            currRowDeceased = rowsDeceased[ii].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+        }
+
+        var currRowRecovered = [];
+        if(rowsRecovered[ii] != undefined)
+        {
+            currRowRecovered = rowsRecovered[ii].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+        }
 
         //get coordinates
         const lat = currRowInfected[2]; 
@@ -77,13 +83,19 @@ async function getDataFromFiles()
         {
             //add to totals
             arrTotalInfected[jj-dateIdxOffset] += parseInt(currRowInfected[jj]);
-            arrTotalDeceased[jj-dateIdxOffset] += parseInt(currRowDeceased[jj]);
-            arrTotalRecovered[jj-dateIdxOffset] += parseInt(currRowRecovered[jj]);
 
-            //add data to matricies
+            if(currRowDeceased[jj] != undefined)
+            {
+                arrTotalDeceased[jj-dateIdxOffset] += parseInt(currRowDeceased[jj]);
+            }
+
+            if(currRowRecovered[jj] != undefined)
+            {
+                arrTotalRecovered[jj-dateIdxOffset] += parseInt(currRowRecovered[jj]);
+            }
+
+            //add infected to matrix
             matrixInfected[ii].push(parseInt(currRowInfected[jj]));
-            matrixDeceased[ii].push(parseInt(currRowDeceased[jj]));
-            matrixRecovered[ii].push(parseInt(currRowRecovered[jj]));
         }
     }
 }
