@@ -80,7 +80,7 @@ class Region
             new THREE.SphereGeometry(0.001, detail, detail),
             new THREE.MeshBasicMaterial({
                 color: cRed, 
-                opacity: .50, 
+                opacity: .40, 
                 transparent: true
             })
         );
@@ -98,7 +98,7 @@ class Region
         var scale = 1;
         if(newInfected >= 1)
         {
-            scale += 10 + (2 * (newInfected / 1000));
+            scale += 8 + (1.5 * (newInfected / 1000));
         }
 
         this.dome.scale.set(scale, scale, scale);
